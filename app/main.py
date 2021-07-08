@@ -210,12 +210,12 @@ async def get_site(filepath, username: str = Depends(get_current_username)):
     return Response(content, media_type=content_type)
 
 
-#def main():
+def main():
     #connect_mongoDB()
-#    dir_path = os.path.dirname(os.path.realpath(__file__))
-#    gin.parse_config_file(os.path.join(dir_path, 'config.gin'))
-#    uvicorn.run(app, host="0.0.0.0", port=os.environ.get("PORT", default=5000))
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    gin.parse_config_file(os.path.join(dir_path, 'config.gin'))
+    uvicorn.run(app, host="0.0.0.0", port=os.environ.get("PORT", default=5000))
 
 
-#if __name__ == "__main__":
-#    main()
+if __name__ == "__main__":
+    main()
