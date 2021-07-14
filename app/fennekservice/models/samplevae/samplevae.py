@@ -5,7 +5,9 @@ import os
 
 
 class SampleVAEModel(FennekModel):
-    def __init__(self, model_id: str = 'model_snare2', library_dir: str = '/content/drive/MyDrive/Samples'):
+#"fennekservice/models/samplevae/model_drum_classes/search_thing"
+    def __init__(self, model_id: str = 'model_drum_classes', library_dir: str = "fennekservice/models/samplevae/model_drum_classes/search_thing"):
+
         super().__init__()
         try:
             real_path = os.path.realpath(__file__)
@@ -18,6 +20,16 @@ class SampleVAEModel(FennekModel):
             print("Could not load SampleVAE model")
             self.tool = None
             raise
+
+
+    def find_similar(self, target_file, x=None, **kwargs):
+        similar_files, onsets, distances = self.tool.find_similar(target_file, num_similar=5)
+        print(target_file)
+        print(similar_files)
+        return similar_files
+
+    def get_TSNE(self, x=None, **kwargs):
+        return self.tool.get_TSNE()
 
     def forward(self, x=None, **kwargs):
         relative_file_path = "generated.wav"

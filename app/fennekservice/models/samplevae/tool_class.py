@@ -9,7 +9,9 @@ from fennekservice.models.samplevae.features import get_features
 from fennekservice.models.samplevae.griffin_lim import griffin_lim
 from fennekservice.models.samplevae.util import get_params
 from scipy.spatial import distance
-
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+import seaborn as sns
 from fennekservice.models.samplevae.model_iaf import VAEModel
 
 # TODO: Generalise, these values shouldn't be hardcoded, maybe need to be stored in separate file when model is trained
@@ -144,6 +146,7 @@ class SoundSampleTool(object):
 
             # If a sample library directory is given, generate embeddings for all samples
             if self.library_dir is not None:
+                print("sample library directory is given, generate embeddings for all samples")
                 self.sample_library = self.build_library()
             else:
                 self.sample_library = None
@@ -280,11 +283,13 @@ class SoundSampleTool(object):
                      target_file,
                      num_similar=1,
                      display=True):
-
+        #print(self.sample_library)
         if self.sample_library is None:
             print('No sample library built. Specify sample directory to create library.')
 
             return None
+        print('Er macht hier schon sein Search Ding')
+        print(self.sample_library)
 
         # Embed target file
         target_emb = self.embed_audio(target_file)
@@ -308,14 +313,59 @@ class SoundSampleTool(object):
 
         return file_list, onsets, nn_distances
 
+    def get_TSNE(self):
+        print("Hier bin ich in der tool Klasse und gebe ein paar Informationen aus")
+        print(self.param["dim_latent"])
+
+        #print("Self.Sample_LIbrary")
+        #print(self.sample_library)
+        latent_space = self.sample_library["embeddings"]
+        #print(latent_space)
+        new_dict = {"Sample":[], "Vector":[]}
+        index = 0
+
+        sound_list = []
+        vector_list = []
+        for key, value in latent_space.items():
+            sound_list.append(key)
+            vector_list.append(value[0,:])
+
+        #print(new_dict)
+        np_array = np.array(vector_list)
+
+        #data = [x[0, :] for x in latent_space.values()]
+        print(np_array)
+
+        time_start = time.time()
+        tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+        tsne_results = tsne.fit_transform(np_array)
+
+        print('t-SNE done! Time elapsed: {} seconds'.format(time.time() - time_start))
+
+        df_subset = {}
+        df_subset['tsne-2d-one'] = tsne_results[:, 0]
+        df_subset['tsne-2d-two'] = tsne_results[:, 1]
+
+        #test = np.hstack((sound_list, df_subset['tsne-2d-one'],df_subset['tsne-2d-two']))
+
+        info =  [{'x': i, 'y': j, 'sound': k} for i, j, k in zip(df_subset['tsne-2d-one'], df_subset['tsne-2d-two'], sound_list)]
+        #info = [{'x': i, 'y': j} for i, j in zip(df_subset['tsne-2d-one'], df_subset['tsne-2d-two'])]
+
+        return info
+
     def build_library(self):
 
         print(f'Constructing library based on directory {self.library_dir}.')
+        cwd = os.getcwd()
+        print("Current Working Directory")
+        print(cwd)
+        file = os.path.join(cwd, self.library_dir)
 
         # Get all paths of audio files
         audio_files = []
 
-        for dirName, subdirList, fileList in os.walk(self.library_dir, topdown=False):
+        for dirName, subdirList, fileList in os.walk(file, topdown=False):
+            print(fileList)
             for fname in fileList:
                 if os.path.splitext(fname)[1] in ['.wav', '.WAV',
                                                   '.aiff', '.AIFF',

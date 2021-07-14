@@ -1,4 +1,4 @@
-import os
+import os, random
 import base64
 import wave
 import gin
@@ -10,7 +10,6 @@ import math
 
 from fennekservice.postprocessing import Postprocessor
 from fennekservice.models.samplevae.samplevae import SampleVAEModel
-
 
 Samplevae_model = SampleVAEModel()
 
@@ -24,6 +23,7 @@ def generate_sound(input_wave, model_id: str = 'my_model',  model_instrument: st
     cwd = os.getcwd()
     file = os.path.join(cwd, usr_file)
     outfile = os.path.join(cwd, usr_outfile)
+    result_wave = None
 
     print("welches Modell wurde Gewählt?")
     print(model_id)
@@ -35,24 +35,33 @@ def generate_sound(input_wave, model_id: str = 'my_model',  model_instrument: st
     #    with open(os.path.join("cachedir", "tmpfile.wav"), "wb") as f:
     #        f.write(base64.b64decode(input_wave))
 
-    if model_id == "SampleVAE":
-        print("Jup SampleVAE!")
+    if model_id == "GAN":
+        dir_model_id = "fennekservice/models/" + model_id
+        model_id_directory = os.path.join(cwd,dir_model_id)
+        model_instrument_directory = os.path.join(model_id_directory,model_instrument)
+        result_wave = random.choice(os.listdir(model_instrument_directory))
+        file_dir = os.path.join(model_instrument_directory, result_wave)
+
+        with open(file_dir, "rb") as f:
+            result_wave = f.read()
+
+        with open(file, "wb") as fout:
+            fout.write(result_wave)
+
+
+    if model_id == "Variational Autoencoder":
+        print("SampleVAE!")
     #result_wave = Samplevae_model(model_id=model_id, library_dir=library_dir)
-    result_wave = Samplevae_model(model_id="model_snare2", library_dir=library_dir)
+        result_wave = Samplevae_model(model_id="model_snare2", library_dir=library_dir)
 
-    with open(file, "wb") as fout:
-        fout.write(result_wave)
+        with open(file, "wb") as fout:
+            fout.write(result_wave)
 
-    #print("lokale tests können starten ;)")
-    #postprocessor = Postprocessor("generated.wav")
-    #outfile = postprocessor.applyEffects()
-    # result_wave = None
-    # with open(file, "rb") as f:
-    #     result_wave = f.read()
     fx = (
         AudioEffectsChain()
     )
     fx(file, outfile)
+
     return result_wave
 
 def play_sound(input_wave, model_id: str = 'my_model', library_dir: str = 'mylibdir',username: str = "Ian", **kwargs):
@@ -157,11 +166,17 @@ def applyEffectsOnGeneratedFile(isReversed, lowpass_value, highpass_value, disto
     return outfile
 
 
-def main():
-    #applyEffectsOnGeneratedFile(False,100,0,0,0,100)
-    generate_sound(username="Ian")
+def tsne_experiment(model_id):
+    outfile = "fennekservice/Ian-generated.wav"
+    #print(Samplevae_model.find_similar(target_file=outfile))
+    response = {"name": model_id}
+    data = Samplevae_model.get_TSNE()
+    for x in data:
+        x['x'] = float(x['x'])
+        x['y'] = float(x['y'])
 
+    response["data"] = data
 
-if __name__ == "__main__":
-    main()
+    return response
+
 

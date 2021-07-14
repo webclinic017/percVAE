@@ -1,6 +1,6 @@
 import sys
 sys.path.append("../")
-
+import numpy as np
 import os
 import gin
 import secrets
@@ -14,7 +14,7 @@ from pydantic import BaseModel
 # from fennekservice.models.samplevae.samplevae import SampleVAEModel
 from mimetypes import guess_type
 from fennekservice.visualization import pltToString, getWaveForm, getSpectrogram
-from fennekservice.generation import generate_sound, play_sound, applyEffectsOnGeneratedFile
+from fennekservice.generation import tsne_experiment, generate_sound, play_sound, applyEffectsOnGeneratedFile
 from fennekservice.postprocessing import Postprocessor
 from fennekservice.mongo import connect_mongoDB, get_mongoDB_presets, post_mongoDB_bookmarks,  get_mongoDB_bookmarks, get_mongoDB_bookmarkListPerUser
 # from fennekservice.generation import genera3te_clap
@@ -121,10 +121,21 @@ def getMongoData(body: MongoBody, username: str = Depends(get_current_username))
         "isReversed": x["v_isReversed"],
         "volume_value": x["v_volume"]
     }
+
 @app.post("/getMongoDBList")
 def getMongoDataList(body: MongoBody, username: str = Depends(get_current_username)):
     x = get_mongoDB_bookmarkListPerUser(username, mongoDB_client)
     #print(x["ObjectId"])
+    #print(x[0])
+    #print(x[0]["_id"])
+    return {
+        "result": x
+    }
+
+@app.post("/getSimilarSounds")
+def getSimilar(body: MongoBody, username: str = Depends(get_current_username)):
+
+    print("Let's get Similar Sounds from the Model!")
     #print(x[0])
     #print(x[0]["_id"])
     return {
@@ -157,6 +168,15 @@ def visualize(body: GenerateBody, username: str = Depends(get_current_username))
             {"name": "Spectrogram",
              "base64img": pltToString(getSpectrogram(usr_outfile))}
         ]
+    }
+
+@app.post("/tsne")
+def tsne():
+    response = tsne_experiment("Clap")
+    response2 = []
+    response2.append(response)
+    return {
+        "result": response2
     }
 
 @app.post("/play")
@@ -217,5 +237,8 @@ def main():
     uvicorn.run(app, host="0.0.0.0", port=os.environ.get("PORT", default=5000))
 
 
+
+
 if __name__ == "__main__":
     main()
+    #tsne()
