@@ -8,7 +8,8 @@ class SampleVAEModel(FennekModel):
 #"fennekservice/models/samplevae/model_drum_classes/search_thing"
 #/Users/Emrehan/frontend/ReactUI/backend/fennekservice/models/samplevae/origin_sample_library/All
 #/Users/Emrehan/Documents/GitHub/SampleVAE_Train/origin_sample_library/Kick
-    def __init__(self, model_id: str = 'model_all2', instrument: str = "Similarity Search", library_dir: str = "fennekservice/models/samplevae", ae_variance: float = 0.0, selectedSound: str = ""):
+#model_id: str = 'model_all2', instrument: str = "Similarity Search", library_dir: str = "fennekservice/models/samplevae", ae_variance: float = 0.0, selectedSound: str = ""
+    def __init__(self, model_id: str = 'model_toms', instrument: str = "Toms", library_dir: str = "fennekservice/models/samplevae/model_toms", ae_variance: float = 0.0, selectedSound: str = ""):
         models = {"Kick": 'model_kick',
                   "Snare": 'model_snare',
                   "Conga": 'model_conga',

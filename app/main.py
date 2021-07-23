@@ -195,7 +195,7 @@ def visualize(body: GenerateBody, username: str = Depends(get_current_username))
 @app.post("/tsne")
 def tsne(body: GenerateBody, username: str = Depends(get_current_username)):
     #TSNE and Preload
-    response = get_tsne_and_preload_model(body.model_instrument)
+    response = get_tsne_and_preload_model(model_instrument=body.model_instrument, username=username)
     response2 = []
     response2.append(response)
     return {
@@ -204,7 +204,7 @@ def tsne(body: GenerateBody, username: str = Depends(get_current_username)):
 
 @app.post("/similarity")
 def tsne(username: str = Depends(get_current_username)):
-    response = preload_similarity()
+    response = preload_similarity(username=username)
 
     return {
         "result": response
@@ -225,7 +225,7 @@ def play(body: GenerateBody, username: str = Depends(get_current_username)):
 
     if body.data == "original":
         print(body.data)
-        response_content = play_sound_original(selectedPoint=body.selectedPoint)
+        response_content = play_sound_original(selectedPoint=body.selectedPoint, username=username)
     else:
         response_content = play_sound(body.data, username=username)
 
