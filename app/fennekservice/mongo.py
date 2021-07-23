@@ -57,6 +57,11 @@ def get_mongoDB_bookmarks(uname, db, bookmark_id):
     x = col_bookmarks.find_one({"user": uname, "_id": ObjectId(bookmark_id)})
     return x
 
+def get_mongoDB_history(uname, db, history_id):
+    col_bookmarks = db["Bookmarks"]
+    x = col_bookmarks.find_one({"user": uname, "_id": ObjectId(history_id)})
+    return x
+
 def get_mongoDB_bookmarkListPerUser(uname, db):
     col_bookmarks = db["Bookmarks"]
     x = list(col_bookmarks.find({"user": uname, "type": "Bookmark"}))
@@ -65,14 +70,35 @@ def get_mongoDB_bookmarkListPerUser(uname, db):
     #    print(x[i]["ObjectId"])
     return x
 
-def post_mongoDB_bookmarks(uname, db, isReversed,lowpass_value,highpass_value,distortion_value,reverb_value,volume_value, model, model_instrument, timestamp):
+
+def get_mongoDB_historyListPerUser(uname, db):
+    col_bookmarks = db["Bookmarks"]
+    x = list(col_bookmarks.find({"user": uname, "type": "History"}))
+    for i in range(len(x)):
+        x[i]["_id"] = str(x[i]["_id"])
+    #    print(x[i]["ObjectId"])
+    return x
+
+def post_mongoDB_history(uname, db, model, model_instrument, timestamp, wavfile):
+    col_bookmarks = db["Bookmarks"]
+    mydict = {"user": uname,
+              "type": "History",
+              "model": model,
+              "instrument": model_instrument,
+              "timestamp": timestamp,
+              "WAV": wavfile
+              }
+    x = col_bookmarks.insert_one(mydict)
+    return x
+
+def post_mongoDB_bookmarks(uname, db, isReversed,lowpass_value,highpass_value,distortion_value,reverb_value,volume_value, model, model_instrument, timestamp, wavfile):
     col_bookmarks = db["Bookmarks"]
     mydict = {"user": uname,
               "type": "Bookmark",
               "model": model,
               "instrument": model_instrument,
-              "vector": "0101002020232324515151",
               "timestamp": timestamp,
+              "WAV": wavfile,
               "v_volume": volume_value,
               "v_distortion": distortion_value,
               "v_reverb": reverb_value,

@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from fennekservice.models.samplevae.model_iaf import VAEModel
 
+
 # TODO: Generalise, these values shouldn't be hardcoded, maybe need to be stored in separate file when model is trained
 pad_length = 125
 num_features = 128
@@ -64,12 +65,14 @@ class SoundSampleTool(object):
                  logdir,
                  batch_size=1,
                  library_dir=None,
-                 library_segmentation=False):
+                 library_segmentation=False,
+                 selectedSound: str = ""):
 
         self.logdir = logdir
         self.batch_size = batch_size
         self.library_dir = library_dir
         self.library_segmentation = library_segmentation
+        self.selectedSound = selectedSound
 
         # Check if model has been trained
         if not os.path.exists(self.logdir):
@@ -217,7 +220,8 @@ class SoundSampleTool(object):
                  audio_files=[],
                  weights=[],
                  normalize_weights=True,
-                 variance=0.0):
+                 variance=0.0,
+                 selectedSound=""):
 
         # Process input files
         if len(audio_files) > 0:
@@ -257,11 +261,30 @@ class SoundSampleTool(object):
             print('No input file given; sampling random point in latent space.')
             embedding_mean_batch = np.random.standard_normal((1, self.param['dim_latent']))
 
+        self.selectedSound = selectedSound
+        print("Was steht in self selectedSound?")
+        print(self.selectedSound)
         # Add some optional Gaussian noise for variation
         if variance > 0:
-            embedding_mean_batch += np.random.normal(loc=0.0,
-                                                     scale=variance,
-                                                     size=embedding_mean_batch.shape)
+            #EMRHN edit: When a point in the Scatterplot is detected:get the vector of this one
+            if self.selectedSound != "":
+                latent_space = self.sample_library["embeddings"]
+                sound_list = []
+                vector_list = []
+                for key, value in latent_space.items():
+                    sound_list.append(key)
+                    vector_list.append(value[0, :])
+                idx = sound_list.index(self.selectedSound)
+                vector = vector_list[idx]
+                #print(self.sample_library["embeddings"][idx])
+                embedding_mean_batch += np.random.normal(loc=vector,
+                                                         scale=variance,
+                                                         size=embedding_mean_batch.shape)
+
+            else:
+                embedding_mean_batch += np.random.normal(loc=0.0,
+                                                         scale=variance,
+                                                         size=embedding_mean_batch.shape)
 
         # Decode the mean embedding
         print(f'Decoding averaged embedding.')
@@ -315,11 +338,13 @@ class SoundSampleTool(object):
 
     def get_TSNE(self):
         print("Hier bin ich in der tool Klasse und gebe ein paar Informationen aus")
+        print(self.sample_library)
         print(self.param["dim_latent"])
 
         #print("Self.Sample_LIbrary")
         #print(self.sample_library)
         latent_space = self.sample_library["embeddings"]
+
         #print(latent_space)
         new_dict = {"Sample":[], "Vector":[]}
         index = 0

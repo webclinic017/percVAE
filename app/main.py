@@ -14,14 +14,15 @@ from pydantic import BaseModel
 # from fennekservice.models.samplevae.samplevae import SampleVAEModel
 from mimetypes import guess_type
 from fennekservice.visualization import pltToString, getWaveForm, getSpectrogram
-from fennekservice.generation import tsne_experiment, generate_sound, play_sound, applyEffectsOnGeneratedFile
+from fennekservice.generation import get_tsne_and_preload_model, preload_similarity, generate_sound, play_sound, play_sound_original,applyEffectsOnGeneratedFile, upload_file, decode_and_save_file, get_generation_file
 from fennekservice.postprocessing import Postprocessor
-from fennekservice.mongo import connect_mongoDB, get_mongoDB_presets, post_mongoDB_bookmarks,  get_mongoDB_bookmarks, get_mongoDB_bookmarkListPerUser
+from fennekservice.mongo import connect_mongoDB, get_mongoDB_presets, post_mongoDB_bookmarks,  get_mongoDB_bookmarks, get_mongoDB_bookmarkListPerUser, post_mongoDB_history, get_mongoDB_historyListPerUser, get_mongoDB_history
 # from fennekservice.generation import genera3te_clap
 import pymongo
 
 #@gin.configurable
-#def generate_clap(input_wave, model_id: str = 'my_model', library_dir: str = 'mylibdir', **kwargs):
+#def generate_clap(input_wave,
+# _id: str = 'my_model', library_dir: str = 'mylibdir', **kwargs):
 #    print("FUCK!")
 
 
@@ -30,9 +31,11 @@ class GenerateBody(BaseModel):
     volume_value: Optional[int]
     distortion_value: Optional[int]
     reverb_value: Optional[int]
+    ae_variance: Optional[int]
     highpass_value: Optional[int]
     lowpass_value: Optional[int]
     isReversed: Optional[bool]
+    selectedPoint: Optional[str]
     model: Optional[str]
     model_instrument: Optional[str]
     timestamp: Optional[str]
@@ -103,28 +106,57 @@ def read_root(username: str = Depends(get_current_username)):
 
 @app.post("/getMongoDBData")
 def getMongoData(body: MongoBody, username: str = Depends(get_current_username)):
-    print("ok jetzt müssen wir die Backenddaten rausholen!")
-    response_content = "ja geil"
+    #RetrieveData
+    response_content = "no audio"
     if body.type == "presets":
         x = get_mongoDB_presets(mongoDB_client, body.id)
-
-    if body.type == "bookmark":
-        print(body.id)
-        x = get_mongoDB_bookmarks(username, mongoDB_client, body.id)
-
-    print(x)
-    return {
+        response = {
         "distortion_value": x["v_distortion"],
         "reverb_value": x["v_reverb"],
         "highpass_value": x["v_highpass"],
         "lowpass_value": x["v_lowpass"],
         "isReversed": x["v_isReversed"],
         "volume_value": x["v_volume"]
-    }
+        }
+
+    if body.type == "bookmark":
+        #EMRHN TBD: AUch die Audio Datei zurückgeben
+        print(body.id)
+        x = get_mongoDB_bookmarks(username, mongoDB_client, body.id)
+        response_content = x["WAV"]
+        decode_and_save_file(data=response_content, username=username)
+        response = {
+            "result": response_content,
+            "distortion_value": x["v_distortion"],
+            "reverb_value": x["v_reverb"],
+            "highpass_value": x["v_highpass"],
+            "lowpass_value": x["v_lowpass"],
+            "isReversed": x["v_isReversed"],
+            "volume_value": x["v_volume"]
+        }
+
+    if body.type == "history":
+        print(body.id)
+        x = get_mongoDB_history(username, mongoDB_client, body.id)
+        response_content = x["WAV"]
+        decode_and_save_file(data=response_content, username=username)
+        #base64.decode(response_content)
+        #EMRHN TBD: neue Methode für history und auch audiodatei mitgeben
+        #x = get_mongoDB_bookmarks(username, mongoDB_client, body.id)
+
+        response= {"result": response_content}
+    print(x)
+    return response
 
 @app.post("/getMongoDBList")
 def getMongoDataList(body: MongoBody, username: str = Depends(get_current_username)):
-    x = get_mongoDB_bookmarkListPerUser(username, mongoDB_client)
+
+    if body.type == "bookmarks":
+        x = get_mongoDB_bookmarkListPerUser(username, mongoDB_client)
+
+    if body.type == "history":
+        x = get_mongoDB_historyListPerUser(username, mongoDB_client)
+        #EMRHN TBD
     #print(x["ObjectId"])
     #print(x[0])
     #print(x[0]["_id"])
@@ -132,20 +164,10 @@ def getMongoDataList(body: MongoBody, username: str = Depends(get_current_userna
         "result": x
     }
 
-@app.post("/getSimilarSounds")
-def getSimilar(body: MongoBody, username: str = Depends(get_current_username)):
-
-    print("Let's get Similar Sounds from the Model!")
-    #print(x[0])
-    #print(x[0]["_id"])
-    return {
-        "result": x
-    }
-
-
 @app.post("/generate")
 def generate(body: GenerateBody, username: str = Depends(get_current_username)):
-    response_content = generate_sound(body.data,model_id=body.model,model_instrument=body.model_instrument, username=username)
+    response_content, model_instrument = generate_sound(body.data,model_id=body.model,model_instrument=body.model_instrument,selectedPoint=body.selectedPoint,ae_variance=body.ae_variance, username=username)
+    post_mongoDB_history(uname=username, db=mongoDB_client, model=body.model, model_instrument=model_instrument, timestamp=body.timestamp, wavfile=base64.b64encode(response_content))
 
     return {
         "result": base64.b64encode(response_content)
@@ -171,17 +193,42 @@ def visualize(body: GenerateBody, username: str = Depends(get_current_username))
     }
 
 @app.post("/tsne")
-def tsne():
-    response = tsne_experiment("Clap")
+def tsne(body: GenerateBody, username: str = Depends(get_current_username)):
+    #TSNE and Preload
+    response = get_tsne_and_preload_model(body.model_instrument)
     response2 = []
     response2.append(response)
     return {
         "result": response2
     }
 
+@app.post("/similarity")
+def tsne(username: str = Depends(get_current_username)):
+    response = preload_similarity()
+
+    return {
+        "result": response
+    }
+
+@app.post("/upload")
+def upload(body: GenerateBody, username: str = Depends(get_current_username)):
+
+    upload_file(data=body.data, username=username)
+
+    response = "upload successfull"
+    return {
+        "result": response
+    }
+
 @app.post("/play")
 def play(body: GenerateBody, username: str = Depends(get_current_username)):
-    response_content = play_sound(body.data, username=username)
+
+    if body.data == "original":
+        print(body.data)
+        response_content = play_sound_original(selectedPoint=body.selectedPoint)
+    else:
+        response_content = play_sound(body.data, username=username)
+
     return {
         "result": base64.b64encode(response_content)
         #"visualization": [
@@ -194,7 +241,8 @@ def play(body: GenerateBody, username: str = Depends(get_current_username)):
 
 @app.post("/bookmark")
 def addToBookmarks(body: GenerateBody, username: str = Depends(get_current_username)):
-    x = post_mongoDB_bookmarks(username, mongoDB_client, body.isReversed,body.lowpass_value,body.highpass_value,body.distortion_value,body.reverb_value,body.volume_value, body.model, body.model_instrument, body.timestamp)
+    current_sound = get_generation_file(username=username)
+    x = post_mongoDB_bookmarks(username, mongoDB_client, body.isReversed,body.lowpass_value,body.highpass_value,body.distortion_value,body.reverb_value,body.volume_value, body.model, body.model_instrument, body.timestamp, wavfile=base64.b64encode(current_sound))
     response_content = "Successfully saved it as Bookmark with id" + str(x)
     return {
         "result": response_content

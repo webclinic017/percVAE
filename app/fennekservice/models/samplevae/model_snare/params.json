@@ -1,7 +1,7 @@
 {
   "audio": {
-    "dataset_file": "datasets/SnareTest_train.pkl",
-    "dataset_test_file": "datasets/SnareTest_valid.pkl",
+    "dataset_file": "datasets/snare_train.pkl",
+    "dataset_test_file": "datasets/snare_valid.pkl",
     "N_FFT": 1024,
     "HOP_LENGTH": 256,
     "SAMPLING_RATE": 16000,
