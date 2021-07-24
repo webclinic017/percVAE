@@ -338,8 +338,8 @@ class SoundSampleTool(object):
 
     def get_TSNE(self):
         print("Hier bin ich in der tool Klasse und gebe ein paar Informationen aus")
-        print(self.sample_library)
-        print(self.param["dim_latent"])
+        #print(self.sample_library)
+        #print(self.param["dim_latent"])
 
         #print("Self.Sample_LIbrary")
         #print(self.sample_library)

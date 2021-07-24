@@ -6,7 +6,7 @@ import gin
 import secrets
 from typing import Optional
 import uvicorn
-from fastapi import FastAPI, HTTPException, status, Depends, Response
+from fastapi import FastAPI, HTTPException, status, Depends, Response, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import base64
@@ -14,12 +14,13 @@ from pydantic import BaseModel
 # from fennekservice.models.samplevae.samplevae import SampleVAEModel
 from mimetypes import guess_type
 from fennekservice.visualization import pltToString, getWaveForm, getSpectrogram
-from fennekservice.generation import get_tsne_and_preload_model, preload_similarity, generate_sound, play_sound, play_sound_original,applyEffectsOnGeneratedFile, upload_file, decode_and_save_file, get_generation_file
+from fennekservice.generation import initializeModels, get_tsne_and_preload_model, preload_similarity, generate_sound, play_sound, play_sound_original,applyEffectsOnGeneratedFile, upload_file, decode_and_save_file, get_generation_file
 from fennekservice.postprocessing import Postprocessor
 from fennekservice.mongo import connect_mongoDB, get_mongoDB_presets, post_mongoDB_bookmarks,  get_mongoDB_bookmarks, get_mongoDB_bookmarkListPerUser, post_mongoDB_history, get_mongoDB_historyListPerUser, get_mongoDB_history
 # from fennekservice.generation import genera3te_clap
 import pymongo
-
+from fennekservice.postprocessing import Postprocessor
+from fennekservice.models.samplevae.samplevae import SampleVAEModel
 #@gin.configurable
 #def generate_clap(input_wave,
 # _id: str = 'my_model', library_dir: str = 'mylibdir', **kwargs):
@@ -178,6 +179,24 @@ def generate(body: GenerateBody, username: str = Depends(get_current_username)):
         #     "base64img": pltToString(getSpectrogram("fennekservice/generated.wav"))}
         #]
     }
+
+@app.post("/generate2")
+async def generate(body: GenerateBody, background_tasks: BackgroundTasks, username: str = Depends(get_current_username)):
+    background_tasks.add_task(write_log, message)
+    response_content, model_instrument = generate_sound(body.data,model_id=body.model,model_instrument=body.model_instrument,selectedPoint=body.selectedPoint,ae_variance=body.ae_variance, username=username)
+    post_mongoDB_history(uname=username, db=mongoDB_client, model=body.model, model_instrument=model_instrument, timestamp=body.timestamp, wavfile=base64.b64encode(response_content))
+
+    return {
+        "result": base64.b64encode(response_content)
+        #"visualization": [
+        #    {"name": "Waveform",
+        #     "base64img": pltToString(getWaveForm("fennekservice/generated.wav"))},
+        #    {"name": "Spectrogram",
+        #     "base64img": pltToString(getSpectrogram("fennekservice/generated.wav"))}
+        #]
+    }
+
+
 @app.post("/getVisualization")
 def visualize(body: GenerateBody, username: str = Depends(get_current_username)):
     #response_content = play_clap(body.data)
@@ -225,7 +244,7 @@ def play(body: GenerateBody, username: str = Depends(get_current_username)):
 
     if body.data == "original":
         print(body.data)
-        response_content = play_sound_original(selectedPoint=body.selectedPoint, username=username)
+        response_content = play_sound_original(selectedPoint=body.selectedPoint, username=username, model_instrument=body.model_instrument)
     else:
         response_content = play_sound(body.data, username=username)
 
@@ -282,10 +301,14 @@ def main():
     #connect_mongoDB()
     dir_path = os.path.dirname(os.path.realpath(__file__))
     gin.parse_config_file(os.path.join(dir_path, 'config.gin'))
+
+
     uvicorn.run(app, host="0.0.0.0", port=os.environ.get("PORT", default=5000))
 
 
-
+@app.on_event("startup")
+async def startup_event():
+    initializeModels()
 
 if __name__ == "__main__":
     main()

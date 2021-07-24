@@ -17,11 +17,23 @@ Samplevae_model2 = None
 Samplevae_model3 = None
 Samplevae_model4 = None
 
+Samplevae_model_kick = None
+Samplevae_model_snare= None
+Samplevae_model_conga= None
+Samplevae_model_cowbell= None
+Samplevae_model_crash= None
+Samplevae_model_ride= None
+Samplevae_model_rimshot= None
+Samplevae_model_toms= None
+Samplevae_model_clap= None
+Samplevae_model_hihat= None
+Samplevae_model_all2= None
+
+
 def getSampleVAE(username):
     if username == "Amy":
         print(username)
         global Samplevae_model1
-        return Samplevae_model1
     elif username == "Elton":
         global Samplevae_model2
         return Samplevae_model2
@@ -33,6 +45,54 @@ def getSampleVAE(username):
         return Samplevae_model4
     else:
         return SampleVAEModel()
+
+def getSampleVAEforInstrument(model_intrument):
+    if model_intrument == "Kick":
+        return Samplevae_model_kick
+    if model_intrument == "Snare":
+        return Samplevae_model_snare
+    if model_intrument == "Conga":
+        return Samplevae_model_conga
+    if model_intrument == "Cowbell":
+        return Samplevae_model_cowbell
+    if model_intrument == "Crash":
+        return Samplevae_model_crash
+    if model_intrument == "Ride":
+        return Samplevae_model_ride
+    if model_intrument == "Rimshot":
+        return Samplevae_model_rimshot
+    if model_intrument == "Toms":
+        return Samplevae_model_toms
+    if model_intrument == "Clap":
+        return Samplevae_model_clap
+    if model_intrument == "Hihat":
+        return Samplevae_model_hihat
+    if model_intrument == "Similarity Search":
+        return Samplevae_model_all2
+
+def initializeModels():
+    global Samplevae_model_kick
+    global Samplevae_model_snare
+    global Samplevae_model_conga
+    global Samplevae_model_cowbell
+    global Samplevae_model_crash
+    global Samplevae_model_ride
+    global Samplevae_model_rimshot
+    global Samplevae_model_toms
+    global Samplevae_model_clap
+    global Samplevae_model_hihat
+    global Samplevae_model_all2
+    Samplevae_model_kick = SampleVAEModel(model_id=dict_models["Kick"], instrument="Kick", library_dir=dict_library_dir["Kick"])
+    Samplevae_model_snare = SampleVAEModel(model_id=dict_models["Snare"], instrument="Snare", library_dir=dict_library_dir["Snare"])
+    Samplevae_model_conga = SampleVAEModel(model_id=dict_models["Conga"], instrument="Conga", library_dir=dict_library_dir["Conga"])
+    Samplevae_model_cowbell = SampleVAEModel(model_id=dict_models["Cowbell"], instrument="Cowbell", library_dir=dict_library_dir["Cowbell"])
+    Samplevae_model_crash = SampleVAEModel(model_id=dict_models["Crash"], instrument="Crash", library_dir=dict_library_dir["Crash"])
+    Samplevae_model_ride = SampleVAEModel(model_id=dict_models["Ride"], instrument="Ride", library_dir=dict_library_dir["Ride"])
+    Samplevae_model_rimshot = SampleVAEModel(model_id=dict_models["Rimshot"], instrument="Rimshot", library_dir=dict_library_dir["Rimshot"])
+    Samplevae_model_toms = SampleVAEModel(model_id=dict_models["Toms"], instrument="Toms", library_dir=dict_library_dir["Toms"])
+    Samplevae_model_clap = SampleVAEModel(model_id=dict_models["Clap"], instrument="Clap", library_dir=dict_library_dir["Clap"])
+    Samplevae_model_hihat = SampleVAEModel(model_id=dict_models["Hihat"], instrument="Hihat", library_dir=dict_library_dir["Hihat"])
+    Samplevae_model_all2 = SampleVAEModel(model_id=dict_models["Similarity Search"], instrument="Similarity Search", library_dir=dict_library_dir["Similarity Search"])
 
 def assignSampleVAE(username, SampleVAE):
     print("assignment of SampleVAE Instance to User started")
@@ -62,6 +122,7 @@ dict_models = {"Kick": 'model_kick',
           "Hihat": 'model_hihat',
           "Similarity Search": 'model_all2'
           }
+
 dict_library_dir = {
     "Kick": 'fennekservice/models/samplevae/model_kick',
     "Snare": 'fennekservice/models/samplevae/model_snare',
@@ -118,7 +179,7 @@ def generate_sound(input_wave, model_id: str = 'my_model',  model_instrument: st
 
 
     if model_id == "Variational Autoencoder":
-        Samplevae_model = getSampleVAE(username=username)
+        Samplevae_model = getSampleVAEforInstrument(model_instrument)
         if Samplevae_model == None:
             Samplevae_model = SampleVAEModel()
             assignSampleVAE(username=username, SampleVAE=Samplevae_model)
@@ -145,7 +206,7 @@ def generate_sound(input_wave, model_id: str = 'my_model',  model_instrument: st
 
     if model_id == "Similarity Search":
         print("Similarity Search!")
-        Samplevae_model = getSampleVAE(username=username)
+        Samplevae_model = getSampleVAEforInstrument(model_instrument)
         if Samplevae_model == None:
             Samplevae_model = SampleVAEModel()
             assignSampleVAE(username=username, SampleVAE=Samplevae_model)
@@ -207,9 +268,9 @@ def play_sound(input_wave, model_id: str = 'my_model', library_dir: str = 'mylib
     #outfile = postprocessor.applyEffects()
     return result_wave
 
-def play_sound_original(selectedPoint: str = 'point',username: str = "Ian", **kwargs):
+def play_sound_original(selectedPoint: str = 'point',username: str = "Ian", model_instrument: str = "Kick", **kwargs):
     print("---Neuer Code :SampleVAE Model hat gerade folgendes Instrument")
-    Samplevae_model = getSampleVAE(username=username)
+    Samplevae_model = getSampleVAEforInstrument(model_instrument)
     if Samplevae_model == None:
         Samplevae_model = SampleVAEModel()
         assignSampleVAE(username=username, SampleVAE=Samplevae_model)
@@ -310,23 +371,25 @@ def applyEffectsOnGeneratedFile(isReversed, lowpass_value, highpass_value, disto
     return outfile
 
 def preload_similarity(username):
-    Samplevae_model = getSampleVAE(username=username)
+    Samplevae_model = getSampleVAEforInstrument("Similarity Search")
     if Samplevae_model == None:
         Samplevae_model = SampleVAEModel()
         assignSampleVAE(username=username, SampleVAE=Samplevae_model)
     model_instrument = "Similarity Search"
     if Samplevae_model.get_instrument() == model_instrument:
         print("Model wieder nutzen")
-    else:
-        Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
-                                         instrument=model_instrument,
-                                         library_dir=dict_library_dir[model_instrument])
-        assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+    #else:
+        #Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
+        #                                 instrument=model_instrument,
+        #                                 library_dir=dict_library_dir[model_instrument])
+        #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
     return "success"
 
 def get_tsne_and_preload_model(model_instrument, username):
-    Samplevae_model = getSampleVAE(username=username)
+    Samplevae_model = getSampleVAEforInstrument(model_instrument)
     if Samplevae_model == None:
+        print("-----------------------SHIT--------------------")
+        print(model_instrument)
         Samplevae_model = SampleVAEModel()
         assignSampleVAE(username=username, SampleVAE=Samplevae_model)
     outfile = "fennekservice/Ian-generated.wav"
