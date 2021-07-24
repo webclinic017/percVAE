@@ -84,10 +84,10 @@ def initializeModels(model_instrument):
     global Samplevae_model_clap
     global Samplevae_model_hihat
     global Samplevae_model_all2
-    if model_instrument == "Kick":
+    if model_instrument == "Kick" and Samplevae_model_kick is None:
         Samplevae_model_kick = SampleVAEModel(model_id=dict_models["Kick"], instrument="Kick",
                                               library_dir=dict_library_dir["Kick"])
-    if model_instrument == "Snare":
+    if model_instrument == "Snare" and Samplevae_model_snare is None:
         Samplevae_model_snare = SampleVAEModel(model_id=dict_models["Snare"], instrument="Snare",
                                                library_dir=dict_library_dir["Snare"])
     #if model_instrument == "Conga":
@@ -96,7 +96,7 @@ def initializeModels(model_instrument):
     #if model_instrument == "Cowbell":
         #Samplevae_model_cowbell = SampleVAEModel(model_id=dict_models["Cowbell"], instrument="Cowbell",
         #                                         library_dir=dict_library_dir["Cowbell"])
-    if model_instrument == "Crash":
+    if model_instrument == "Crash" and Samplevae_model_crash is None:
         Samplevae_model_crash = SampleVAEModel(model_id=dict_models["Crash"], instrument="Crash",
                                                library_dir=dict_library_dir["Crash"])
     #if model_instrument == "Ride":
@@ -105,16 +105,16 @@ def initializeModels(model_instrument):
     #if model_instrument == "Rimshot":
         #Samplevae_model_rimshot = SampleVAEModel(model_id=dict_models["Rimshot"], instrument="Rimshot",
         #                                         library_dir=dict_library_dir["Rimshot"])
-    if model_instrument == "Toms":
+    if model_instrument == "Toms" and Samplevae_model_toms is None:
         Samplevae_model_toms = SampleVAEModel(model_id=dict_models["Toms"], instrument="Toms",
                                               library_dir=dict_library_dir["Toms"])
-    if model_instrument == "Clap":
+    if model_instrument == "Clap" and Samplevae_model_clap is None:
         Samplevae_model_clap = SampleVAEModel(model_id=dict_models["Clap"], instrument="Clap",
                                               library_dir=dict_library_dir["Clap"])
-    if model_instrument == "Hihat":
+    if model_instrument == "Hihat" and Samplevae_model_hihat is None:
         Samplevae_model_hihat = SampleVAEModel(model_id=dict_models["Hihat"], instrument="Hihat",
                                                library_dir=dict_library_dir["Hihat"])
-    if model_instrument == "Similarity Search":
+    if model_instrument == "Similarity Search" and Samplevae_model_all2 is None:
         Samplevae_model_all2 = SampleVAEModel(model_id=dict_models["Similarity Search"], instrument="Similarity Search",
                                               library_dir=dict_library_dir["Similarity Search"])
     logging.info(f'Thread {model_instrument}: finished')

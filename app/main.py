@@ -283,7 +283,13 @@ def addEffects(body: GenerateBody, username: str = Depends(get_current_username)
     return {
         "result": response_content
     }
+@app.post("/initializeModels")
+async def initializeModelsThread(body: GenerateBody, username: str = Depends(get_current_username)):
+    await startThreadsForModels()
 
+    return {
+        "result": "response_content"
+    }
 
 @app.get("/{filepath:path}")
 async def get_site(filepath, username: str = Depends(get_current_username)):
@@ -310,12 +316,13 @@ def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     gin.parse_config_file(os.path.join(dir_path, 'config.gin'))
 
-
+    #loop = asyncio.get_event_loop()
+    #loop.create_task(startThreadsForModels())
     uvicorn.run(app, host="0.0.0.0", port=os.environ.get("PORT", default=5000))
 
 
-@app.on_event("startup")
-def startup_event():
+
+async def startThreadsForModels():
     #x = threading.Thread(target=initializeModels)
     print("geht es los?")
     logging.basicConfig(format='%(levelname)s - %(asctime)s: %(message)s', datefmt='%H:%M:%S', level=logging.DEBUG)
