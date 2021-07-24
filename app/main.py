@@ -4,6 +4,12 @@ import numpy as np
 import os
 import gin
 import secrets
+import threading
+import logging
+import random, time
+import asyncio
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 import uvicorn
 from fastapi import FastAPI, HTTPException, status, Depends, Response, BackgroundTasks
@@ -13,6 +19,7 @@ import base64
 from pydantic import BaseModel
 # from fennekservice.models.samplevae.samplevae import SampleVAEModel
 from mimetypes import guess_type
+from fennekservice.generation import dict_models
 from fennekservice.visualization import pltToString, getWaveForm, getSpectrogram
 from fennekservice.generation import initializeModels, get_tsne_and_preload_model, preload_similarity, generate_sound, play_sound, play_sound_original,applyEffectsOnGeneratedFile, upload_file, decode_and_save_file, get_generation_file
 from fennekservice.postprocessing import Postprocessor
@@ -166,8 +173,9 @@ def getMongoDataList(body: MongoBody, username: str = Depends(get_current_userna
     }
 
 @app.post("/generate")
-def generate(body: GenerateBody, username: str = Depends(get_current_username)):
-    response_content, model_instrument = generate_sound(body.data,model_id=body.model,model_instrument=body.model_instrument,selectedPoint=body.selectedPoint,ae_variance=body.ae_variance, username=username)
+async def generate(body: GenerateBody, username: str = Depends(get_current_username)):
+    response_content, model_instrument = await generate_sound(body.data,model_id=body.model,model_instrument=body.model_instrument,selectedPoint=body.selectedPoint,ae_variance=body.ae_variance, username=username)
+
     post_mongoDB_history(uname=username, db=mongoDB_client, model=body.model, model_instrument=model_instrument, timestamp=body.timestamp, wavfile=base64.b64encode(response_content))
 
     return {
@@ -307,8 +315,35 @@ def main():
 
 
 @app.on_event("startup")
-async def startup_event():
-    initializeModels()
+def startup_event():
+    #x = threading.Thread(target=initializeModels)
+    print("geht es los?")
+    logging.basicConfig(format='%(levelname)s - %(asctime)s: %(message)s', datefmt='%H:%M:%S', level=logging.DEBUG)
+    logging.getLogger('matplotlib.font_manager').disabled = True
+    logging.info('Initializing Models Started')
+    items = 15
+    workers = 8
+
+    test = range(items)
+    print(test)
+    tasks = list(dict_models.keys())
+
+    #initializeModels("Kick")
+    with ThreadPoolExecutor(max_workers=workers) as e:
+        #executer.map(initializeModels,)
+        #e.map(test, taks)
+        e.map(initializeModels, tasks)
+    logging.info('Initializing Models Finished')
+    #x.start()
+
+def test(item):
+    print(item)
+    s = random.randrange(1,10)
+    logging.info(f'Thread {item}: id = {threading.get_ident()}')
+    logging.info(f'Thread {item}: name = {threading.current_thread().name}')
+    logging.info(f'Thread {item}: sleeping for {s}')
+    time.sleep(s)
+    logging.info(f'Thread {item}: finished')
 
 if __name__ == "__main__":
     main()
