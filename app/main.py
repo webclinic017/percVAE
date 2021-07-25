@@ -55,10 +55,10 @@ class MongoBody(BaseModel):
     type: Optional[str]
 
 
+
 app = FastAPI()
 security = HTTPBasic()
 mongoDB_client = connect_mongoDB()
-
 
 @gin.configurable
 def get_valid_credentials():
@@ -84,7 +84,6 @@ def get_valid_credentials():
 
 
 def get_current_username(credentials: HTTPBasicCredentials = Depends(security)):
-    print("HERE HERE HERE HERE HERE")
     x = get_valid_credentials()
 
     correct_username = None
@@ -173,26 +172,18 @@ def getMongoDataList(body: MongoBody, username: str = Depends(get_current_userna
     }
 
 @app.post("/generate")
-async def generate(body: GenerateBody, username: str = Depends(get_current_username)):
-    response_content, model_instrument = await generate_sound(body.data,model_id=body.model,model_instrument=body.model_instrument,selectedPoint=body.selectedPoint,ae_variance=body.ae_variance, username=username)
-
-    post_mongoDB_history(uname=username, db=mongoDB_client, model=body.model, model_instrument=model_instrument, timestamp=body.timestamp, wavfile=base64.b64encode(response_content))
-
-    return {
-        "result": base64.b64encode(response_content)
-        #"visualization": [
-        #    {"name": "Waveform",
-        #     "base64img": pltToString(getWaveForm("fennekservice/generated.wav"))},
-        #    {"name": "Spectrogram",
-        #     "base64img": pltToString(getSpectrogram("fennekservice/generated.wav"))}
-        #]
-    }
-
-@app.post("/generate2")
 async def generate(body: GenerateBody, background_tasks: BackgroundTasks, username: str = Depends(get_current_username)):
-    background_tasks.add_task(write_log, message)
-    response_content, model_instrument = generate_sound(body.data,model_id=body.model,model_instrument=body.model_instrument,selectedPoint=body.selectedPoint,ae_variance=body.ae_variance, username=username)
-    post_mongoDB_history(uname=username, db=mongoDB_client, model=body.model, model_instrument=model_instrument, timestamp=body.timestamp, wavfile=base64.b64encode(response_content))
+    #response_content, model_instrument = await generate_sound(model_id=body.model,model_instrument=body.model_instrument,selectedPoint=body.selectedPoint,ae_variance=body.ae_variance, username=username)
+    args = [body.model,body.model_instrument,body.ae_variance,body.selectedPoint,username]
+    response_content = ""
+    model_instrument = ""
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as e:
+        future = e.submit(lambda p: generate_sound(*p), args)
+        result = future.result()
+        response_content = result[0]
+        model_instrument = result[1]
+    background_tasks.add_task(post_mongoDB_history, uname=username, db=mongoDB_client, model=body.model, model_instrument=model_instrument, timestamp=body.timestamp, wavfile=base64.b64encode(response_content))
 
     return {
         "result": base64.b64encode(response_content)
@@ -203,7 +194,6 @@ async def generate(body: GenerateBody, background_tasks: BackgroundTasks, userna
         #     "base64img": pltToString(getSpectrogram("fennekservice/generated.wav"))}
         #]
     }
-
 
 @app.post("/getVisualization")
 def visualize(body: GenerateBody, username: str = Depends(get_current_username)):
@@ -249,12 +239,23 @@ def upload(body: GenerateBody, username: str = Depends(get_current_username)):
 
 @app.post("/play")
 def play(body: GenerateBody, username: str = Depends(get_current_username)):
-
+    response_content = ""
     if body.data == "original":
-        print(body.data)
-        response_content = play_sound_original(selectedPoint=body.selectedPoint, username=username, model_instrument=body.model_instrument)
+        #response_content = play_sound_original(selectedPoint=body.selectedPoint, username=username, model_instrument=body.model_instrument)
+        args = [body.selectedPoint, username, body.model_instrument]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as e:
+            future = e.submit(lambda p: play_sound_original(*p), args)
+            result = future.result()
+            response_content = result
+
     else:
-        response_content = play_sound(body.data, username=username)
+        #response_content = play_sound(body.data, username=username)
+        args = [username]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as e:
+            future = e.submit(lambda p: play_sound(*p), args)
+            result = future.result()
+            print(result)
+            response_content = result
 
     return {
         "result": base64.b64encode(response_content)
@@ -284,12 +285,13 @@ def addEffects(body: GenerateBody, username: str = Depends(get_current_username)
         "result": response_content
     }
 @app.post("/initializeModels")
-async def initializeModelsThread(body: GenerateBody, username: str = Depends(get_current_username)):
+async def initializeModelsThread(body: GenerateBody, username: str = Depends(get_current_username), thread_pool=None):
     await startThreadsForModels()
 
     return {
         "result": "response_content"
     }
+
 
 @app.get("/{filepath:path}")
 async def get_site(filepath, username: str = Depends(get_current_username)):
@@ -318,7 +320,7 @@ def main():
 
     #loop = asyncio.get_event_loop()
     #loop.create_task(startThreadsForModels())
-    uvicorn.run(app, host="0.0.0.0", port=os.environ.get("PORT", default=5000))
+    uvicorn.run(app, host="0.0.0.0", port=os.environ.get("PORT", default=5000), workers=1)
 
 
 
@@ -330,13 +332,10 @@ async def startThreadsForModels():
     logging.info('Initializing Models Started')
     items = 15
     workers = 8
-
-    test = range(items)
-    print(test)
     tasks = list(dict_models.keys())
-
+    #tasks = ["Kick"]
     #initializeModels("Kick")
-    with ThreadPoolExecutor(max_workers=workers) as e:
+    with ThreadPoolExecutor(max_workers=8) as e:
         #executer.map(initializeModels,)
         #e.map(test, taks)
         e.map(initializeModels, tasks)

@@ -164,9 +164,8 @@ dict_library_dir = {
 
 
 @gin.configurable
-async def generate_sound(input_wave, model_id: str = 'my_model', model_instrument: str = 'my_instrument',
-                   ae_variance: float = 0.0, selectedPoint: str = '', library_dir: str = 'mylibdir',
-                   username: str = "Ian", **kwargs):
+def generate_sound(model_id: str = 'my_model', model_instrument: str = 'my_instrument',
+                   ae_variance: float = 0.0, selectedPoint: str = '', username: str = "Ian", **kwargs):
     __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
     usr_file = "fennekservice/" + username + "-generated.wav"
@@ -207,9 +206,9 @@ async def generate_sound(input_wave, model_id: str = 'my_model', model_instrumen
 
     if model_id == "Variational Autoencoder":
         Samplevae_model = getSampleVAEforInstrument(model_instrument)
-        if Samplevae_model == None:
-            Samplevae_model = SampleVAEModel()
-            assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+        #if Samplevae_model == None:
+            #Samplevae_model = SampleVAEModel()
+            #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
         print("Test GET Methods")
         if Samplevae_model.get_instrument() == model_instrument:
             print("Model wieder nutzen")
@@ -221,29 +220,30 @@ async def generate_sound(input_wave, model_id: str = 'my_model', model_instrumen
             print(Samplevae_model.get_instrument())
             print(model_instrument)
             # result_wave = Samplevae_model(model_id="model_snare2", library_dir=library_dir,selectedSound = selectedPoint, ae_variance=ae_variance)
-            Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
-                                             instrument=model_instrument,
-                                             library_dir=dict_library_dir[model_instrument])
-            result_wave = Samplevae_model.forward(selectedSound=selectedPoint, ae_variance=ae_variance)
-            assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+            #Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
+            #                                 instrument=model_instrument,
+            #                                 library_dir=dict_library_dir[model_instrument])
+            #result_wave = Samplevae_model.forward(selectedSound=selectedPoint, ae_variance=ae_variance)
+            #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
 
         with open(file, "wb") as fout:
             fout.write(result_wave)
 
     if model_id == "Similarity Search":
         print("Similarity Search!")
-        Samplevae_model = getSampleVAEforInstrument(model_instrument)
-        if Samplevae_model == None:
-            Samplevae_model = SampleVAEModel()
-            assignSampleVAE(username=username, SampleVAE=Samplevae_model)
         model_instrument = "Similarity Search"
-        if Samplevae_model.get_instrument() == model_instrument:
-            print("Model wieder nutzen")
-        else:
-            Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
-                                             instrument=model_instrument,
-                                             library_dir=dict_library_dir[model_instrument])
-            assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+        Samplevae_model = getSampleVAEforInstrument(model_instrument)
+        #if Samplevae_model == None:
+        #    Samplevae_model = SampleVAEModel()
+            #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+
+        #if Samplevae_model.get_instrument() == model_instrument:
+        #    print("Model wieder nutzen")
+        #else:
+        #    Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
+        #                                     instrument=model_instrument,
+        #                                     library_dir=dict_library_dir[model_instrument])
+            #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
         similarSounds = Samplevae_model.find_similar(target_file=usr_upload_file)
         # write_similar_files_to_txt(username=username, text=similarSounds)
         result_wave = Samplevae_model.forward(selectedSound=similarSounds[0])
@@ -272,7 +272,7 @@ async def generate_sound(input_wave, model_id: str = 'my_model', model_instrumen
     return result_wave, model_instrument
 
 
-def play_sound(input_wave, model_id: str = 'my_model', library_dir: str = 'mylibdir', username: str = "Ian", **kwargs):
+def play_sound(username: str = "Ian", **kwargs):
     # print("Zeit das Processed File zurückzuschicken")
     usr_file = "fennekservice/" + username + "-generated.wav"
     usr_outfile = "fennekservice/" + username + "-processed.wav"
@@ -298,9 +298,9 @@ def play_sound(input_wave, model_id: str = 'my_model', library_dir: str = 'mylib
 def play_sound_original(selectedPoint: str = 'point', username: str = "Ian", model_instrument: str = "Kick", **kwargs):
     print("---Neuer Code :SampleVAE Model hat gerade folgendes Instrument")
     Samplevae_model = getSampleVAEforInstrument(model_instrument)
-    if Samplevae_model == None:
-        Samplevae_model = SampleVAEModel()
-        assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+    #if Samplevae_model == None:
+        #Samplevae_model = SampleVAEModel()
+        #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
     print(Samplevae_model.get_instrument())
     dir = dict_library_dir[Samplevae_model.get_instrument()] + "/Data/"
     print(dir)
@@ -401,9 +401,8 @@ def applyEffectsOnGeneratedFile(isReversed, lowpass_value, highpass_value, disto
 
 def preload_similarity(username):
     Samplevae_model = getSampleVAEforInstrument("Similarity Search")
-    if Samplevae_model == None:
-        Samplevae_model = SampleVAEModel()
-        assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+    #if Samplevae_model == None:
+    #    Samplevae_model = SampleVAEModel()
     model_instrument = "Similarity Search"
     if Samplevae_model.get_instrument() == model_instrument:
         print("Model wieder nutzen")
@@ -420,8 +419,8 @@ def get_tsne_and_preload_model(model_instrument, username):
     if Samplevae_model == None:
         print("-----------------------SHIT--------------------")
         print(model_instrument)
-        Samplevae_model = SampleVAEModel()
-        assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+        #Samplevae_model = SampleVAEModel()
+        #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
     outfile = "fennekservice/Ian-generated.wav"
     # print(Samplevae_model.find_similar(target_file=outfile))
     if Samplevae_model.get_instrument() == model_instrument:
@@ -432,10 +431,10 @@ def get_tsne_and_preload_model(model_instrument, username):
         print(Samplevae_model.get_instrument())
         print(model_instrument)
         # result_wave = Samplevae_model(model_id="model_snare2", library_dir=library_dir,selectedSound = selectedPoint, ae_variance=ae_variance)
-        Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
-                                         instrument=model_instrument,
-                                         library_dir=dict_library_dir[model_instrument])
-        assignSampleVAE(username=username, SampleVAE=Samplevae_model)
+        #Samplevae_model = SampleVAEModel(model_id=dict_models[model_instrument],
+        #                                 instrument=model_instrument,
+        #                                 library_dir=dict_library_dir[model_instrument])
+        #assignSampleVAE(username=username, SampleVAE=Samplevae_model)
 
     response = {"name": model_instrument}
     data = Samplevae_model.get_TSNE()

@@ -311,8 +311,8 @@ class SoundSampleTool(object):
             print('No sample library built. Specify sample directory to create library.')
 
             return None
-        print('Er macht hier schon sein Search Ding')
-        print(self.sample_library)
+        #print('Er macht hier schon sein Search Ding')
+        #print(self.sample_library)
 
         # Embed target file
         target_emb = self.embed_audio(target_file)

@@ -56,8 +56,8 @@ class SampleVAEModel(FennekModel):
 
     def find_similar(self, target_file, x=None, **kwargs):
         similar_files, onsets, distances = self.tool.find_similar(target_file, num_similar=5)
-        print(target_file)
-        print(similar_files)
+        #print(target_file)
+        #print(similar_files)
         return similar_files
 
     def get_TSNE(self, x=None, **kwargs):

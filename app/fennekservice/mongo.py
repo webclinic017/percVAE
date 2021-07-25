@@ -73,13 +73,16 @@ def get_mongoDB_bookmarkListPerUser(uname, db):
 
 def get_mongoDB_historyListPerUser(uname, db):
     col_bookmarks = db["Bookmarks"]
-    x = list(col_bookmarks.find({"user": uname, "type": "History"}))
+    print("Jetzt holen wir uns die Histories")
+    print(uname)
+    x = list(col_bookmarks.find({"user": uname, "type": "History"}).sort([("timestamp", -1)]).limit(10))
+    print("Antwort vom Server")
     for i in range(len(x)):
         x[i]["_id"] = str(x[i]["_id"])
     #    print(x[i]["ObjectId"])
     return x
 
-def post_mongoDB_history(uname, db, model, model_instrument, timestamp, wavfile):
+async def post_mongoDB_history(uname, db, model, model_instrument, timestamp, wavfile):
     col_bookmarks = db["Bookmarks"]
     mydict = {"user": uname,
               "type": "History",
